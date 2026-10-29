@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#08080c">
+<meta name="mobile-web-app-capable" content="yes">
+<title>PSP Web Hub</title>
+<style>
+:root{--bg:#08080c;--bg2:#181824;--br:#22222e;--t:#fff;--dim:#a0a0b0;--pur:#8b5cf6;--cy:#06b6d4;--btn-scale:1;--btn-opacity:.75;--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--t);-webkit-tap-highlight-color:transparent;user-select:none;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+button{font-family:inherit;cursor:pointer;border:none;color:inherit}
+.hidden{display:none!important}
+.screen{position:fixed;inset:0;display:none;flex-direction:column}
+.screen.active{display:flex}
+#home{overflow:hidden;background:var(--bg)}
+#hero-bg{position:absolute;inset:-100px;z-index:0;background-size:cover;background-position:center;filter:blur(60px) saturate(1.4) brightness(.4);opacity:0;transition:opacity .6s}
+#hero-bg.visible{opacity:1}
+#hero-tint{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(8,8,12,.35) 0%,rgba(8,8,12,.8) 50%,rgba(8,8,12,.99) 100%)}
+.home-content{position:relative;z-index:2;flex:1;overflow-y:auto;overflow-x:hidden;padding-top:calc(var(--st) + 16px);padding-bottom:calc(var(--sb) + 32px)}
+.top-bar{display:flex;justify-content:space-between;align-items:center;padding:0 20px;margin-bottom:24px}
+.logo{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:700}
+.logo-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--pur),var(--cy));display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 16px rgba(139,92,246,.4)}
+.logo-text b{background:linear-gradient(135deg,var(--pur),var(--cy));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.actions{display:flex;gap:8px}
+.icon-btn{width:44px;height:44px;background:rgba(20,20,28,.75);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);border-radius:12px;font-size:18px;display:flex;align-items:center;justify-content:center;transition:transform .15s;position:relative}
+.icon-btn:active{transform:scale(.92)}
+.icon-btn.ready{background:rgba(34,197,94,.2);border-color:rgba(34,197,94,.5)}
+.icon-btn.ready::after{content:'';position:absolute;top:6px;right:6px;width:8px;height:8px;background:#22c55e;border-radius:50%}
+.hero-info{padding:0 24px 24px;text-align:center}
+.hero-title{font-size:28px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px;line-height:1.15;transition:opacity .3s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-meta{color:var(--dim);font-size:13px;margin-bottom:18px}
+.hero-play-btn{display:inline-flex;align-items:center;gap:10px;padding:14px 32px;background:linear-gradient(135deg,var(--pur),var(--cy));border-radius:100px;font-size:15px;font-weight:700;box-shadow:0 8px 32px rgba(139,92,246,.4);transition:transform .15s}
+.hero-play-btn:active{transform:scale(.95)}
+.carousel-wrap{margin-top:20px}
+.carousel-label{padding:0 24px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--mute,#606070);margin-bottom:14px}
+.carousel{display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:8px calc(50vw - 80px);scroll-padding:0 calc(50vw - 80px)}
+.carousel::-webkit-scrollbar{display:none}
+.game-card{flex:0 0 150px;scroll-snap-align:center;cursor:pointer;position:relative;transition:transform .35s cubic-bezier(.2,.8,.2,1),filter .3s;transform:scale(.88);filter:brightness(.7)}
+.game-card.focused{transform:scale(1.05);filter:brightness(1);z-index:5}
+.card-cover{aspect-ratio:1;border-radius:18px;overflow:hidden;background:linear-gradient(135deg,#2a1e4a,#1a1a2e);border:2px solid rgba(255,255,255,.06);box-shadow:0 8px 32px rgba(0,0,0,.5);position:relative;display:flex;align-items:center;justify-content:center;transition:border-color .3s,box-shadow .3s}
+.game-card.focused .card-cover{border-color:rgba(139,92,246,.6);box-shadow:0 12px 48px rgba(139,92,246,.4),0 0 0 1px rgba(139,92,246,.4)}
+.card-cover img{width:100%;height:100%;object-fit:cover}
+.card-initials{font-size:48px;font-weight:900;color:rgba(255,255,255,.15);letter-spacing:-3px}
+.card-name{margin-top:12px;font-size:13px;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px;color:var(--dim);transition:color .3s}
+.game-card.focused .card-name{color:#fff}
+.card-remove{position:absolute;top:-6px;right:-6px;width:28px;height:28px;border-radius:50%;background:rgba(30,30,40,.95);border:1px solid rgba(255,255,255,.1);font-size:14px;display:flex;align-items:center;justify-content:center;z-index:10}
+.empty{display:none;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;gap:16px}
+.empty.show{display:flex}
+.empty-icon{width:96px;height:96px;border-radius:24px;background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(6,182,212,.2));display:flex;align-items:center;justify-content:center;font-size:42px;margin-bottom:8px}
+.empty h2{font-size:20px}
+.empty p{color:var(--dim);font-size:14px;max-width:300px;line-height:1.5}
+.btn-primary{padding:14px 28px;background:linear-gradient(135deg,var(--pur),var(--cy));border-radius:12px;font-weight:700;font-size:14px;box-shadow:0 4px 20px rgba(139,92,246,.3)}
+.btn-primary:active{transform:scale(.95)}
+
+/* ===== SETTINGS PANEL ===== */
+#settings{position:fixed;inset:0;background:var(--bg);z-index:300;display:none;flex-direction:column;padding:calc(var(--st) + 16px) 16px calc(var(--sb) + 16px);overflow-y:auto}
+#settings.open{display:flex}
+.settings-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.settings-header h2{font-size:22px}
+.settings-body{display:flex;flex-direction:column;gap:14px}
+.set-section{background:var(--bg2);border:1px solid var(--br);border-radius:14px;padding:16px}
+.set-section h3{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--cy);margin-bottom:14px;font-weight:700}
+.set-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.04);gap:12px}
+.set-row:last-child{border-bottom:none}
+.set-row>span:first-child{flex:1;min-width:0}
+.set-row select,.set-row input[type=range]{background:#0a0a12;border:1px solid var(--br);color:#fff;border-radius:8px;padding:9px 12px;font-size:13px;min-width:120px;max-width:160px}
+.set-row input[type=range]{padding:0;min-width:120px}
+.set-row input[type=checkbox]{width:48px;height:26px;-webkit-appearance:none;appearance:none;background:#0a0a12;border-radius:100px;position:relative;cursor:pointer;border:1px solid var(--br);transition:.2s}
+.set-row input[type=checkbox]:checked{background:var(--pur);border-color:var(--pur)}
+.set-row input[type=checkbox]::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s}
+.set-row input[type=checkbox]:checked::after{left:24px}
+.set-note{color:var(--dim);font-size:12px;line-height:1.6;padding:8px 0}
+.preset-btns{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+.preset-btn{padding:12px 8px;background:#0a0a12;border:1px solid var(--br);border-radius:10px;font-size:13px;font-weight:600;transition:.15s}
+.preset-btn:active,.preset-btn.active{background:var(--pur);border-color:var(--pur)}
+
+/* ===== PLAYER ===== */
+#player{background:#000}
+#ejs-container{position:absolute;inset:0;width:100%;height:100%}
+#exit-btn{position:fixed;top:calc(var(--st) + 12px);left:calc(var(--sl) + 12px);width:44px;height:44px;border-radius:50%;background:rgba(10,10,16,.85);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.15);font-size:18px;z-index:2147483647;display:flex;align-items:center;justify-content:center}
+#exit-btn:active{transform:scale(.92)}
+#fps-badge{position:fixed;top:calc(var(--st) + 16px);right:calc(var(--sr) + 16px);background:rgba(10,10,16,.85);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.15);padding:8px 14px;border-radius:100px;font-size:12px;font-family:ui-monospace,monospace;color:#22ff88;z-index:2147483647;display:none;pointer-events:none}
+#fps-badge.show{display:block}
+#loader{position:absolute;inset:0;background:rgba(8,8,12,.98);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:100;padding:24px}
+.loader-ring{width:56px;height:56px;border:4px solid rgba(255,255,255,.1);border-top-color:var(--pur);border-right-color:var(--cy);border-radius:50%;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loader-text{color:var(--dim);font-size:14px;text-align:center;line-height:1.6;max-width:340px}
+#loader-debug{color:#606070;font-size:11px;text-align:center;font-family:ui-monospace,monospace;max-width:340px}
+#loader-cancel{margin-top:8px;padding:10px 24px;background:rgba(255,85,102,.15);border:1px solid rgba(255,85,102,.3);color:#ff8a8a;border-radius:10px;font-size:13px;font-weight:600}
+
+#toast{position:fixed;bottom:calc(var(--sb) + 24px);left:50%;transform:translateX(-50%) translateY(100px);background:rgba(20,20,28,.95);backdrop-filter:blur(12px);border:1px solid var(--br);border-radius:100px;padding:12px 22px;font-size:13px;z-index:400;opacity:0;transition:opacity .3s,transform .3s;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#warn{position:fixed;inset:0;background:rgba(8,8,12,.98);z-index:500;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;gap:16px}
+#warn.show{display:flex}
+#warn h2{font-size:20px;color:#ff8a8a}
+
+/* ===== EJS TOUCH CONTROLS OVERRIDE ===== */
+#ejs-container [id^="ejs_"] button,
+#ejs-container .ejs_virtualGamepad_parent > *,
+#ejs-container [class*="ejs_control"] {
+  opacity: var(--btn-opacity) !important;
+  transition: opacity .2s, transform .1s !important;
+}
+#ejs-container .ejs_virtualGamepad_parent [class*="button"] {
+  background: rgba(139, 92, 246, 0.35) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 50% !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+#ejs-container .ejs_virtualGamepad_parent [class*="dpad"] {
+  background: rgba(139, 92, 246, 0.25) !important;
+  border: 2px solid rgba(255, 255, 255, 0.25) !important;
+}
+#ejs-container .ejs_virtualGamepad_parent [class*="stick"] {
+  background: rgba(6, 182, 212, 0.2) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* ===== TABLET RESPONSIVE ===== */
+@media (min-width: 768px) {
+  .game-card{flex:0 0 180px}
+  .hero-title{font-size:32px}
+  .set-row{font-size:15px}
+  .set-row select,.set-row input[type=range]{min-width:160px;font-size:14px}
+  #exit-btn{width:52px;height:52px;font-size:20px}
+  .icon-btn{width:50px;height:50px;font-size:20px}
+}
+@media (min-width: 1024px) {
+  .game-card{flex:0 0 200px}
+  .carousel{gap:20px}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HOME ===== -->
+<div id="home" class="screen active">
+  <div id="hero-bg"></div>
+  <div id="hero-tint"></div>
+  <div class="home-content">
+    <div class="top-bar">
+      <div class="logo"><div class="logo-mark">▶</div><div class="logo-text">PSP <b>WEB</b></div></div>
+      <div class="actions">
+        <button id="btn-offline" class="icon-btn" title="تحميل للعمل بدون نت">⬇</button>
+        <button id="btn-settings" class="icon-btn" title="الإعدادات">⚙</button>
+        <button id="btn-import" class="icon-btn">＋</button>
+      </div>
+    </div>
+    <div id="hero-info" class="hero-info hidden">
+      <div id="hero-title" class="hero-title">—</div>
+      <div id="hero-meta" class="hero-meta">—</div>
+      <button id="hero-play" class="hero-play-btn"><span style="font-size:12px">▶</span><span>ابدأ اللعب</span></button>
+    </div>
+    <div id="empty-state" class="empty">
+      <div class="empty-icon">🎮</div>
+      <h2>مكتبتك فارغة</h2>
+      <p>استورد ملفات PSP (ISO / CSO / PBP). سيتم استخراج غلاف اللعبة تلقائيًا.</p>
+      <button id="btn-import-empty" class="btn-primary">＋ استيراد لعبة</button>
+    </div>
+    <div id="library" class="carousel-wrap hidden">
+      <div class="carousel-label">مكتبتك</div>
+      <div id="carousel" class="carousel"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SETTINGS ===== -->
+<div id="settings">
+  <div class="settings-header">
+    <h2>الإعدادات</h2>
+    <button id="btn-settings-close" class="icon-btn">✕</button>
+  </div>
+  <div class="settings-body">
+    <div class="set-section">
+      <h3>🖼️ الجرافيكس</h3>
+      <div class="set-row">
+        <span>نمط الجودة</span>
+        <div></div>
+      </div>
+      <div class="preset-btns">
+        <button class="preset-btn" data-preset="performance">⚡ أداء أقصى</button>
+        <button class="preset-btn active" data-preset="balanced">⚖️ متوازن</button>
+        <button class="preset-btn" data-preset="quality">✨ جودة عالية</button>
+        <button class="preset-btn" data-preset="ultra">💎 جودة فائقة</button>
+      </div>
+      <div class="set-row" style="margin-top:8px">
+        <span>الدقة</span>
+        <select id="set-resolution">
+          <option value="1">1x (PSP الأصلية)</option>
+          <option value="2">2x (موصى)</option>
+          <option value="3">3x</option>
+          <option value="4">4x (أجهزة قوية)</option>
+        </select>
+      </div>
+      <div class="set-row">
+        <span>فلترة القوام</span>
+        <select id="set-texture">
+          <option value="linear">Linear (ناعم)</option>
+          <option value="nearest">Nearest (حاد)</option>
+        </select>
+      </div>
+      <div class="set-row">
+        <span>Anisotropic</span>
+        <select id="set-aniso">
+          <option value="0">معطل</option>
+          <option value="2">2x</option>
+          <option value="4">4x</option>
+          <option value="8">8x</option>
+          <option value="16">16x</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="set-section">
+      <h3>⚡ الأداء</h3>
+      <div class="set-row">
+        <span>تخطي الإطارات</span>
+        <select id="set-frameskip">
+          <option value="0">معطل (أجمل صورة)</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3 (أسرع)</option>
+          <option value="auto">Auto</option>
+        </select>
+      </div>
+      <div class="set-row">
+        <span>عرض عداد FPS</span>
+        <input type="checkbox" id="set-fps">
+      </div>
+      <div class="set-note">💡 إذا كانت اللعبة بطيئة: اختر "أداء أقصى" أو خفّض الدقة إلى 1x</div>
+    </div>
+
+    <div class="set-section">
+      <h3>🎮 التحكم</h3>
+      <div class="set-row">
+        <span>حجم الأزرار</span>
+        <select id="set-btnsize">
+          <option value="small">صغير</option>
+          <option value="normal">عادي</option>
+          <option value="large">كبير (تابلت)</option>
+          <option value="xlarge">ضخم</option>
+        </select>
+      </div>
+      <div class="set-row">
+        <span>شفافية الأزرار</span>
+        <input type="range" id="set-opacity" min="20" max="100" step="5">
+      </div>
+      <div class="set-row">
+        <span>اهتزاز عند اللمس</span>
+        <input type="checkbox" id="set-vibration">
+      </div>
+    </div>
+
+    <div class="set-section">
+      <h3>ℹ️ إعدادات متقدمة</h3>
+      <div class="set-note">داخل اللعبة، اضغط زر <strong>☰</strong> في القائمة العلوية للوصول إلى:
+        <br>• Core Options (إعدادات PPSSPP الكاملة)
+        <br>• Save State / Load State (حفظ/تحميل)
+        <br>• شاشة كاملة، سرعة، تحكم
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PLAYER ===== -->
+<div id="player" class="screen">
+  <div id="ejs-container"></div>
+  <button id="exit-btn">✕</button>
+  <div id="fps-badge">-- FPS</div>
+  <div id="loader">
+    <div class="loader-ring"></div>
+    <div id="loader-text">جاري تحميل المحاكي...</div>
+    <div id="loader-debug"></div>
+    <button id="loader-cancel">إلغاء</button>
+  </div>
+</div>
+
+<div id="warn">
+  <h2>⚠ يجب تشغيل الملف عبر HTTPS</h2>
+  <p>افتح الملف من رابط HTTPS (GitHub Pages / Netlify / Cloudflare)</p>
+</div>
+
+<div id="toast"></div>
+<input id="file-input" type="file" accept=".iso,.cso,.pbp" multiple hidden>
+
+<script>
+'use strict';
+
+/* ===== Service Worker (inline) ===== */
+const SW_SRC = [
+  "const VER='psp-offline-v4';",
+  "const CDN='https://cdn.emulatorjs.org/stable/data/';",
+  "const FILES=['./','./index.html',",
+  "CDN+'loader.js',CDN+'emulator.min.js',CDN+'emulator.min.css',",
+  "CDN+'cores/psp/ppsspp_libretro.js',CDN+'cores/psp/ppsspp_libretro.wasm'];",
+  "self.addEventListener('install',e=>self.skipWaiting());",
+  "self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));",
+  "self.addEventListener('message',e=>{const d=e.data,p=e.ports&&e.ports[0];if(!d||!p)return;if(d.type==='CACHE_ALL')cacheAll(p);else if(d.type==='STATUS')status().then(s=>p.postMessage(s));});",
+  "async function cacheAll(port){const c=await caches.open(VER);let done=0,failed=0;for(const u of FILES){try{if(!(await c.match(u))){const r=await fetch(u,{mode:'cors',credentials:'omit'});if(r.ok)await c.put(u,r);else failed++;}}catch{failed++;}done++;port.postMessage({type:'progress',done,total:FILES.length,failed});}port.postMessage({type:'done',total:FILES.length,failed});}",
+  "async function status(){const c=await caches.open(VER);let n=0;for(const u of FILES)if(await c.match(u))n++;return{cached:n,total:FILES.length};}",
+  "self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET'||!r.url.startsWith('http'))return;e.respondWith((async()=>{const c=await caches.match(r.url);if(c)return c;try{const res=await fetch(r);if(res.ok&&res.type!=='opaque'){const cl=res.clone();caches.open(VER).then(cc=>cc.put(r.url,cl));}return res;}catch{return new Response('Offline',{status:503});}})());});",
+].join('\n');
+
+/* ===== Settings ===== */
+const SKEY = 'psp-settings-v4';
+const SDEF = {
+  preset: 'balanced',
+  resolution: 2,
+  texture: 'linear',
+  aniso: 4,
+  frameskip: 1,
+  showFps: false,
+  btnSize: 'normal',
+  opacity: 75,
+  vibration: true
+};
+function loadS() {
+  try {
+    const s = localStorage.getItem(SKEY);
+    return s ? { ...SDEF, ...JSON.parse(s) } : { ...SDEF };
+  } catch { return { ...SDEF }; }
+}
+function saveS(s) { localStorage.setItem(SKEY, JSON.stringify(s)); }
+const settings = loadS();
+
+function applyPreset(preset) {
+  if (preset === 'performance') {
+    settings.resolution = 1; settings.texture = 'nearest';
+    settings.frameskip = 2; settings.aniso = 0;
+  } else if (preset === 'balanced') {
+    settings.resolution = 1; settings.texture = 'linear';
+    settings.frameskip = 1; settings.aniso = 4;
+  } else if (preset === 'quality') {
+    settings.resolution = 2; settings.texture = 'linear';
+    settings.frameskip = 0; settings.aniso = 8;
+  } else if (preset === 'ultra') {
+    settings.resolution = 3; settings.texture = 'linear';
+    settings.frameskip = 0; settings.aniso = 16;
+  }
+  settings.preset = preset;
+  saveS(settings);
+  syncSettingsUI();
+}
+
+function applyCSSVars() {
+  const scale = settings.btnSize === 'xlarge' ? 1.6 : settings.btnSize === 'large' ? 1.3 : settings.btnSize === 'small' ? 0.75 : 1;
+  document.documentElement.style.setProperty('--btn-scale', scale);
+  document.documentElement.style.setProperty('--btn-opacity', settings.opacity / 100);
+}
+
+function syncSettingsUI() {
+  const $ = s => document.querySelector(s);
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.preset === settings.preset));
+  const res = $('#set-resolution'); if (res) res.value = settings.resolution;
+  const tex = $('#set-texture'); if (tex) tex.value = settings.texture;
+  const ani = $('#set-aniso'); if (ani) ani.value = settings.aniso;
+  const fs = $('#set-frameskip'); if (fs) fs.value = settings.frameskip;
+  const fps = $('#set-fps'); if (fps) fps.checked = settings.showFps;
+  const bs = $('#set-btnsize'); if (bs) bs.value = settings.btnSize;
+  const op = $('#set-opacity'); if (op) op.value = settings.opacity;
+  const vib = $('#set-vibration'); if (vib) vib.checked = settings.vibration;
+  applyCSSVars();
+}
+
+/* ===== Helpers ===== */
+const $ = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function toast(msg, ms = 2400) { const e = $('#toast'); e.textContent = msg; e.classList.add('show'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('show'), ms); }
+function formatBytes(b) { if (b < 1024) return b + ' B'; if (b < 1048576) return (b/1024).toFixed(1) + ' KB'; if (b < 1073741824) return (b/1048576).toFixed(1) + ' MB'; return (b/1073741824).toFixed(2) + ' GB'; }
+
+/* ===== IndexedDB ===== */
+const DBN = 'psp-hub-v4';
+let dbP = null;
+function getDB() {
+  if (dbP) return dbP;
+  dbP = new Promise((res, rej) => {
+    const r = indexedDB.open(DBN, 1);
+    r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('games')) d.createObjectStore('games', { keyPath: 'id' }); };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+  return dbP;
+}
+async function dbPut(g) { const db = await getDB(); return new Promise((r, j) => { const t = db.transaction('games', 'readwrite'); t.objectStore('games').put(g); t.oncomplete = () => r(g); t.onerror = () => j(t.error); }); }
+async function dbAll() { const db = await getDB(); return new Promise((r, j) => { const t = db.transaction('games', 'readonly'); const q = t.objectStore('games').getAll(); q.onsuccess = () => r(q.result.sort((a,b) => b.addedAt - a.addedAt)); q.onerror = () => j(q.error); }); }
+async function dbGet(id) { const db = await getDB(); return new Promise((r, j) => { const t = db.transaction('games', 'readonly'); const q = t.objectStore('games').get(id); q.onsuccess = () => r(q.result); q.onerror = () => j(q.error); }); }
+async function dbDel(id) { const db = await getDB(); return new Promise((r, j) => { const t = db.transaction('games', 'readwrite'); t.objectStore('games').delete(id); t.oncomplete = () => r(); t.onerror = () => j(t.error); }); }
+
+/* ===== Icon extraction ===== */
+function isPng(b) { const v = new Uint8Array(b, 0, Math.min(8, b.byteLength || b.length)); return v[0] === 0x89 && v[1] === 0x50 && v[2] === 0x4E && v[3] === 0x47; }
+async function extractPbpIcons(buf) { if (buf.byteLength < 40) return null; const v = new DataView(buf); if (String.fromCharCode(v.getUint8(0),v.getUint8(1),v.getUint8(2),v.getUint8(3)) !== '\u0000PBP') return null; const o=[]; for(let i=0;i<8;i++)o.push(v.getUint32(8+i*4,true)); const r={}; [[1,2,'icon0'],[3,4,'pic0'],[4,5,'pic1']].forEach(([a,b,k])=>{if(o[a]&&o[b]>o[a]&&o[b]<=buf.byteLength){const s=buf.slice(o[a],o[b]);if(isPng(s))r[k]=new Blob([s],{type:'image/png'});}}); return Object.keys(r).length?r:null; }
+function isoFind(view,off,size,t){const S=2048;let o=off;const end=off+size;while(o<end){const l=view.getUint8(o);if(l===0){const si=Math.floor((o-off)/S);o=off+(si+1)*S;continue;}const e=view.getUint32(o+2,true);const s=view.getUint32(o+10,true);const nl=view.getUint8(o+32);if(nl>0){let n='';for(let i=0;i<nl;i++)n+=String.fromCharCode(view.getUint8(o+33+i));n=n.replace(/;.*$/,'').replace(/\.$/,'');if(n.toUpperCase()===t.toUpperCase())return{extent:e,size:s};}o+=l;}return null;}
+async function extractIsoIcons(buf){const S=2048;if(buf.byteLength<17*S)return null;const v=new DataView(buf);if(v.getUint8(16*S)!==1)return null;const re=v.getUint32(16*S+156+2,true);const rs=v.getUint32(16*S+156+10,true);const psp=isoFind(v,re*S,rs,'PSP_GAME');if(!psp)return null;const r={};const tg={'ICON0.PNG':'icon0','PIC0.PNG':'pic0','PIC1.PNG':'pic1'};for(const[n,k]of Object.entries(tg)){const e=isoFind(v,psp.extent*S,psp.size,n);if(e&&e.size>8&&e.extent*S+e.size<=buf.byteLength){const s=buf.slice(e.extent*S,e.extent*S+e.size);if(isPng(s))r[k]=new Blob([s],{type:'image/png'});}}return Object.keys(r).length?r:null;}
+async function extractCsoIcons(buf){if(buf.byteLength<24)return null;const v=new DataView(buf);if(String.fromCharCode(v.getUint8(0),v.getUint8(1),v.getUint8(2),v.getUint8(3))!=='CISO')return null;const hs=v.getUint32(4,true),ts=v.getUint32(8,true),bs=v.getUint32(12,true),al=v.getUint8(17);if(bs!==2048)return null;const ic=Math.ceil(ts/bs)+1;const idx=new DataView(buf,hs,ic*4);async function rb(n){if(n>=ic-1)return null;const i0=idx.getUint32(n*4,true);const i1=idx.getUint32((n+1)*4,true);const pl=(i0&0x80000000)!==0;const o0=(i0&0x7FFFFFFF)*(1<<al);const o1=(i1&0x7FFFFFFF)*(1<<al);const len=o1-o0;if(o0+len>buf.byteLength)return null;const s=buf.slice(o0,o0+len);if(pl)return new Uint8Array(s);try{const ds=new DecompressionStream('deflate-raw');const st=new Blob([s]).stream().pipeThrough(ds);return new Uint8Array(await new Response(st).arrayBuffer());}catch{return null;}}const pvd=await rb(16);if(!pvd||pvd.length<2048)return null;const pv=new DataView(pvd.buffer,pvd.byteOffset);if(pv.getUint8(0)!==1)return null;const re=pv.getUint32(156+2,true),rs=pv.getUint32(156+10,true);const rbc=Math.ceil(rs/2048);const rd=new Uint8Array(rbc*2048);for(let i=0;i<rbc;i++){const b=await rb(re+i);if(!b)return null;rd.set(b.slice(0,2048),i*2048);}const psp=isoFind(new DataView(rd.buffer),0,rs,'PSP_GAME');if(!psp)return null;const pbc=Math.ceil(psp.size/2048);const pd=new Uint8Array(pbc*2048);for(let i=0;i<pbc;i++){const b=await rb(psp.extent+i);if(!b)return null;pd.set(b.slice(0,2048),i*2048);}const psv=new DataView(pd.buffer);const r={};const tg={'ICON0.PNG':'icon0','PIC0.PNG':'pic0','PIC1.PNG':'pic1'};for(const[n,k]of Object.entries(tg)){const e=isoFind(psv,0,psp.size,n);if(!e||e.size<8)continue;const fb=Math.ceil(e.size/2048);const fd=new Uint8Array(fb*2048);let ok=true;for(let i=0;i<fb;i++){const b=await rb(e.extent+i);if(!b){ok=false;break;}fd.set(b.slice(0,2048),i*2048);}if(!ok)continue;const s=fd.buffer.slice(0,e.size);if(isPng(s))r[k]=new Blob([s],{type:'image/png'});}return Object.keys(r).length?r:null;}
+async function extractIcons(f,ext){try{const b=await f.arrayBuffer();if(ext==='pbp')return await extractPbpIcons(b);if(ext==='iso')return await extractIsoIcons(b);if(ext==='cso')return await extractCsoIcons(b);}catch(e){console.warn(e);}return null;}
+function blobToDataURL(b){return new Promise((r,j)=>{const f=new FileReader();f.onload=()=>r(f.result);f.onerror=j;f.readAsDataURL(b);});}
+
+/* ===== State ===== */
+const state = { games: [], focused: 0, loading: false };
+
+/* ===== Library ===== */
+async function renderLibrary() {
+  state.games = await dbAll();
+  const car = $('#carousel'), empty = $('#empty-state'), lib = $('#library'), hi = $('#hero-info'), hb = $('#hero-bg');
+  car.innerHTML = '';
+  if (!state.games.length) { empty.classList.add('show'); lib.classList.add('hidden'); hi.classList.add('hidden'); hb.classList.remove('visible'); return; }
+  empty.classList.remove('show'); lib.classList.remove('hidden'); hi.classList.remove('hidden');
+  state.games.forEach((g, i) => {
+    const card = document.createElement('div');
+    card.className = 'game-card';
+    card.innerHTML = `<div class="card-cover">${g.iconUrl ? `<img src="${g.iconUrl}" alt="">` : `<div class="card-initials">${(g.title||'??').slice(0,2).toUpperCase()}</div>`}<button class="card-remove" data-id="${g.id}">✕</button></div><div class="card-name">${g.title}</div>`;
+    card.querySelector('.card-remove').addEventListener('click', async e => { e.stopPropagation(); if (confirm(`حذف "${g.title}"؟`)) { await dbDel(g.id); toast('تم الحذف'); await renderLibrary(); } });
+    card.addEventListener('click', () => selectCard(i));
+    car.appendChild(card);
+  });
+  car.removeEventListener('scroll', onScroll);
+  car.addEventListener('scroll', onScroll, { passive: true });
+  await sleep(50);
+  updateFocus(0);
+}
+
+let scrollRaf = null;
+function onScroll() {
+  if (scrollRaf) return;
+  scrollRaf = requestAnimationFrame(() => {
+    scrollRaf = null;
+    const car = $('#carousel');
+    const cards = car.querySelectorAll('.game-card');
+    if (!cards.length) return;
+    const cx = car.scrollLeft + car.clientWidth / 2;
+    let best = 0, bd = Infinity;
+    cards.forEach((c, i) => {
+      const d = Math.abs((c.offsetLeft + c.offsetWidth / 2) - cx);
+      if (d < bd) { bd = d; best = i; }
+    });
+    if (best !== state.focused) updateFocus(best);
+  });
+}
+function selectCard(i) { const car = $('#carousel'); const card = car.querySelectorAll('.game-card')[i]; if (card) { const t = card.offsetLeft + card.offsetWidth / 2 - car.clientWidth / 2; car.scrollTo({ left: t, behavior: 'smooth' }); } updateFocus(i); }
+function updateFocus(i) { state.focused = i; document.querySelectorAll('.game-card').forEach((c, idx) => c.classList.toggle('focused', idx === i)); const g = state.games[i]; if (!g) return; const bg = $('#hero-bg'), t = $('#hero-title'), m = $('#hero-meta'); const u = g.pic1Url || g.pic0Url || g.iconUrl; if (u) { bg.style.backgroundImage = `url(${u})`; bg.classList.add('visible'); } else bg.classList.remove('visible'); t.style.opacity = '0'; setTimeout(() => { t.textContent = g.title; t.style.opacity = '1'; }, 120); m.textContent = `${g.ext.toUpperCase()} • ${formatBytes(g.size)}`; }
+
+/* ===== Import ===== */
+async function importFiles(files) {
+  if (!files.length) return;
+  toast(`جاري استيراد ${files.length} لعبة...`, 5000);
+  let n = 0;
+  for (const f of files) {
+    const ext = f.name.split('.').pop().toLowerCase();
+    if (!['iso', 'cso', 'pbp'].includes(ext)) { toast(`غير مدعوم: ${f.name}`); continue; }
+    const title = f.name.replace(/\.(iso|cso|pbp)$/i, '').replace(/[_\-]+/g, ' ').trim();
+    toast(`معالجة: ${title}`, 5000);
+    const icons = await extractIcons(f, ext);
+    await dbPut({
+      id: crypto.randomUUID(), title, ext, size: f.size, addedAt: Date.now(),
+      iconUrl: icons?.icon0 ? await blobToDataURL(icons.icon0) : null,
+      pic0Url: icons?.pic0 ? await blobToDataURL(icons.pic0) : null,
+      pic1Url: icons?.pic1 ? await blobToDataURL(icons.pic1) : null,
+      blob: new Blob([await f.arrayBuffer()], { type: 'application/octet-stream' })
+    });
+    n++;
+  }
+  toast(`تم استيراد ${n} لعبة ✓`);
+  await renderLibrary();
+}
+
+/* ===== Launch ===== */
+function startGame(game) { sessionStorage.setItem('playGame', game.id); location.reload(); }
+
+async function bootPlayer(game) {
+  if (state.loading) return;
+  state.loading = true;
+
+  $('#home').classList.remove('active');
+  $('#player').classList.add('active');
+  $('#loader').classList.remove('hidden');
+  $('#ejs-container').innerHTML = '';
+  $('#loader-text').textContent = 'جاري تجهيز المحاكي...';
+
+  try { await screen.orientation?.lock('landscape'); } catch {}
+  try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch {}
+
+  const hasCOI = window.crossOriginIsolated === true;
+  const hasSAB = typeof SharedArrayBuffer !== 'undefined';
+  const canUseThreads = hasCOI && hasSAB;
+  $('#loader-debug').textContent = `Threads: ${canUseThreads ? 'ON ✓' : 'OFF (أبطأ)'} | COI: ${hasCOI}`;
+
+  applyCSSVars();
+  if (settings.showFps) $('#fps-badge').classList.add('show');
+  else $('#fps-badge').classList.remove('show');
+
+  const blobUrl = URL.createObjectURL(game.blob);
+
+  window.EJS_player = '#ejs-container';
+  window.EJS_core = 'psp';
+  window.EJS_threads = canUseThreads;
+  window.EJS_gameUrl = blobUrl;
+  window.EJS_gameName = game.title;
+  window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+  window.EJS_startOnLoaded = true;
+  window.EJS_language = 'ar-SA';
+  window.EJS_color = '#8b5cf6';
+  window.EJS_backgroundColor = '#08080c';
+
+  // ✅ جميع أزرار PSP
+  window.EJS_VirtualGamepadSettings = [
+    { name: "BUTTON_1", type: "button", location: "right" },
+    { name: "BUTTON_2", type: "button", location: "right" },
+    { name: "BUTTON_3", type: "button", location: "right" },
+    { name: "BUTTON_4", type: "button", location: "right" },
+    { name: "LEFT_TOP", type: "button", location: "left_shoulder" },
+    { name: "RIGHT_TOP", type: "button", location: "right_shoulder" },
+    { name: "SELECT", type: "button", location: "center" },
+    { name: "START", type: "button", location: "center" },
+    { name: "DPAD_UP", type: "button", location: "left" },
+    { name: "DPAD_DOWN", type: "button", location: "left" },
+    { name: "DPAD_LEFT", type: "button", location: "left" },
+    { name: "DPAD_RIGHT", type: "button", location: "left" },
+    { name: "LEFT_STICK", type: "stick", location: "left" }
+  ];
+
+  window.EJS_defaultOptions = {
+    'save-state-location': 'browser'
+  };
+
+  let started = false;
+  const checker = setInterval(() => {
+    const canvas = $('#ejs-container canvas');
+    if (canvas && canvas.width > 100 && canvas.height > 100) {
+      started = true;
+      clearInterval(checker);
+      setTimeout(() => $('#loader').classList.add('hidden'), 800);
+      // محاولة ضبط إعدادات PPSSPP الأساسية بعد التحميل
+      try {
+        const emu = window.EJS_emulator;
+        if (emu && emu.gameManager) {
+          emu.gameManager.setVariable?.('ppsspp_resolution', String(settings.resolution));
+          emu.gameManager.setVariable?.('ppsspp_frameskip', String(settings.frameskip));
+          emu.gameManager.setVariable?.('ppsspp_texture_filtering', settings.texture === 'linear' ? '1' : '0');
+          emu.gameManager.setVariable?.('ppsspp_anisotropic_filtering', String(settings.aniso));
+        }
+      } catch (e) { console.warn('Set variables:', e); }
+    }
+  }, 500);
+
+  setTimeout(() => {
+    if (!started) {
+      clearInterval(checker);
+      $('#loader-text').textContent = '⚠ لم يبدأ المحاكي بعد 90 ثانية';
+      $('#loader-debug').innerHTML = `COI: ${hasCOI} | Threads: ${canUseThreads}<br>افتح Console للمزيد أو اضغط إلغاء`;
+    }
+  }, 90000);
+
+  const script = document.createElement('script');
+  script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+  script.onerror = () => { $('#loader-text').textContent = '⚠ فشل تحميل loader.js'; };
+  document.body.appendChild(script);
+
+  startFpsLoop();
+}
+
+let fpsFrameCount = 0;
+let fpsLastTime = performance.now();
+function startFpsLoop() {
+  if (!settings.showFps) return;
+  const loop = () => {
+    fpsFrameCount++;
+    const now = performance.now();
+    if (now - fpsLastTime >= 1000) {
+      const fps = fpsFrameCount;
+      fpsFrameCount = 0;
+      fpsLastTime = now;
+      if ($('#player').classList.contains('active')) {
+        $('#fps-badge').textContent = fps + ' FPS';
+      }
+      requestAnimationFrame(loop);
+    } else {
+      requestAnimationFrame(loop);
+    }
+  };
+  requestAnimationFrame(loop);
+}
+
+function exitGame() {
+  state.loading = false;
+  sessionStorage.removeItem('playGame');
+  try { window.EJS_emulator?.pause?.(); } catch {}
+  location.reload();
+}
+
+/* ===== Offline ===== */
+async function handleOffline() {
+  if (!('serviceWorker' in navigator)) { toast('❌ المتصفح لا يدعم العمل بدون نت'); return; }
+  if (location.protocol !== 'https:') { toast('⚠ يحتاج HTTPS'); return; }
+  const reg = await navigator.serviceWorker.getRegistration();
+  if (!reg) { toast('⚠ انتظر لحظة وأعد المحاولة'); return; }
+  const sw = reg.active || reg.waiting || reg.installing;
+  if (!sw) { toast('⚠ SW مش نشط'); return; }
+  const check = new MessageChannel();
+  check.port1.onmessage = (e) => {
+    const d = e.data || {};
+    if (d.cached >= d.total) { toast(`✓ جاهز بدون نت (${d.cached}/${d.total})`, 3500); $('#btn-offline').classList.add('ready'); return; }
+    const work = new MessageChannel();
+    work.port1.onmessage = (ev) => {
+      const r = ev.data;
+      if (r.type === 'progress') { const pct = Math.round((r.done / r.total) * 100); toast(`⬇ ${pct}% (${r.done}/${r.total})`, 120000); }
+      else if (r.type === 'done') {
+        const ok = r.total - (r.failed || 0);
+        if (ok === r.total) { toast(`✓ تم! (${ok}/${r.total})`, 5000); $('#btn-offline').classList.add('ready'); }
+        else { toast(`⚠ ${ok}/${r.total}`, 5000); }
+      }
+    };
+    sw.postMessage({ type: 'CACHE_ALL' }, [work.port2]);
+  };
+  sw.postMessage({ type: 'STATUS' }, [check.port2]);
+}
+
+async function checkOffline() {
+  if (!('serviceWorker' in navigator)) return;
+  const reg = await navigator.serviceWorker.getRegistration();
+  if (!reg || !reg.active) return;
+  const ch = new MessageChannel();
+  ch.port1.onmessage = (e) => { const d = e.data || {}; if (d.cached >= d.total) $('#btn-offline').classList.add('ready'); };
+  reg.active.postMessage({ type: 'STATUS' }, [ch.port2]);
+}
+
+async function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const blob = new Blob([SW_SRC], { type: 'application/javascript' });
+    const url = URL.createObjectURL(blob);
+    await navigator.serviceWorker.register(url);
+    console.log('[SW] registered');
+  } catch (e) { console.warn('[SW]', e.message); }
+}
+
+/* ===== Settings UI bindings ===== */
+function bindSettings() {
+  document.querySelectorAll('.preset-btn').forEach(b => {
+    b.addEventListener('click', () => { applyPreset(b.dataset.preset); toast('تم تطبيق: ' + b.textContent.trim()); });
+  });
+  const bind = (id, key, transform = v => v, type = 'change') => {
+    const el = $('#' + id);
+    if (!el) return;
+    el.addEventListener(type, () => {
+      let v;
+      if (el.type === 'checkbox') v = el.checked;
+      else if (el.type === 'range') v = Number(el.value);
+      else if (el.tagName === 'SELECT' && !isNaN(el.value) && el.value !== 'auto') v = Number(el.value);
+      else v = el.value;
+      settings[key] = transform(v);
+      saveS(settings);
+      applyCSSVars();
+      if (key === 'showFps') {
+        if (v) $('#fps-badge').classList.add('show');
+        else $('#fps-badge').classList.remove('show');
+      }
+      if (['resolution', 'frameskip', 'texture', 'aniso'].includes(key)) {
+        toast('💡 سيتم تطبيقه عند بدء اللعبة القادمة', 3000);
+      }
+    }, type);
+  };
+  bind('set-resolution', 'resolution', Number);
+  bind('set-texture', 'texture');
+  bind('set-aniso', 'aniso', Number);
+  bind('set-frameskip', 'frameskip', v => v === 'auto' ? 'auto' : Number(v));
+  bind('set-fps', 'showFps', null, 'change');
+  bind('set-btnsize', 'btnSize');
+  bind('set-opacity', 'opacity', Number, 'input');
+  bind('set-vibration', 'vibration', null, 'change');
+  syncSettingsUI();
+}
+
+/* ===== Events ===== */
+function bind() {
+  $('#btn-import').addEventListener('click', () => $('#file-input').click());
+  $('#btn-import-empty').addEventListener('click', () => $('#file-input').click());
+  $('#btn-offline').addEventListener('click', handleOffline);
+  $('#btn-settings').addEventListener('click', () => $('#settings').classList.add('open'));
+  $('#btn-settings-close').addEventListener('click', () => $('#settings').classList.remove('open'));
+  $('#file-input').addEventListener('change', e => { importFiles(e.target.files).catch(err => { console.error(err); toast('خطأ: ' + err.message); }); e.target.value = ''; });
+  $('#hero-play').addEventListener('click', () => { const g = state.games[state.focused]; if (g) startGame(g); });
+  $('#exit-btn').addEventListener('click', exitGame);
+  $('#loader-cancel').addEventListener('click', exitGame);
+  document.addEventListener('contextmenu', e => { if ($('#player').classList.contains('active')) e.preventDefault(); });
+}
+
+/* ===== Boot ===== */
+async function boot() {
+  if (location.protocol === 'file:') { $('#warn').classList.add('show'); return; }
+  bind();
+  bindSettings();
+  registerSW().then(() => checkOffline());
+  const pending = sessionStorage.getItem('playGame');
+  if (pending) {
+    sessionStorage.removeItem('playGame');
+    const g = await dbGet(pending);
+    if (g) { bootPlayer(g); return; }
+  }
+  await renderLibrary();
+  console.log('🎮 PSP Web Hub ready | COI:', window.crossOriginIsolated);
+}
+boot().catch(err => { console.error(err); toast('خطأ: ' + err.message); });
+</script>
+</body>
+</html>
